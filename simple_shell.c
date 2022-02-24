@@ -15,14 +15,7 @@ char* readInput(){
 
 }
 
-int main()
-{
-    
-    //test
-    printf("$");
-    char* buffer = readInput();
-
-    buffer = unescape(buffer, NULL);
+char** tokenize(char* buffer){
 
     char** tokens = malloc(64*sizeof(char));
     int tokensIndex = 0;
@@ -32,14 +25,26 @@ int main()
         tokens[tokensIndex] = token;
         tokensIndex++;
     }
-    
-    for (int i = 0; i < tokensIndex; i++)
-    {
-        printf("%s\n", tokens[i]);
-    }
-    
 
-    // printf(buffer);
+    return tokens;
+}
+
+int main()
+{
+    
+    //test
+    printf("$");
+    char* buffer = readInput();
+
+    buffer = unescape(buffer, NULL);
+
+    char** tokens = tokenize(buffer);
+
+    int i = 0;
+    while(tokens[i] != NULL){
+        printf("%s\n", tokens[i]);
+        i++;
+    }
 
     return 0;
 
