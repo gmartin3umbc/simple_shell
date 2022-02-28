@@ -9,40 +9,47 @@
 
 
 char* readInput(){
+
+    
     //create initial buffer
     size_t bufferLength = 0;
-    char* buffer = malloc(sizeof(char) * bufferLength);
+    char* buffer = NULL;
 
     ssize_t lastChar = getline(&buffer, &bufferLength, stdin);
 
-    //delete last char which is always the '\n' 
+    //delete last char which is always the '\n'
     buffer[lastChar-1] = '\0';
-    
+
     return buffer;
+
 }
 
 char** tokenize(char* buffer){
 
-    char** tokens = malloc(sizeof(buffer)*sizeof(char));
+    //allocate memory for one pointer
+    char** tokens = malloc(sizeof(char*));
     int tokensIndex = 0;
     char* token;
 
     while((token = strtok_r(buffer, " ", &buffer))){
+        //allocate more memory for another pointer
+        tokens = realloc(tokens, (tokensIndex+1)*sizeof(char*));
         tokens[tokensIndex] = token;
         tokensIndex++;
     }
+
+    //include final NULL pointer to be used in execvp
+    tokens = realloc(tokens, (tokensIndex+1)*sizeof(char*));
+    tokens[tokensIndex] = NULL;
     
     free(token);
-
     return tokens;
-
-    free(tokens);
 }
 
 int executeInstruction(char** tokens){
     
     pid_t retVal;
-    int status;
+    int status = 0;
 
     retVal = fork();
     if (retVal < 0) {
@@ -54,9 +61,11 @@ int executeInstruction(char** tokens){
         execvp(tokens[0], tokens);
     } else {
         // Parent process
-        // while (!WIFEXITED(status) && !WIFSIGNALED(status)) {
-        // waitpid(retVal, &status, WUNTRACED);
-        wait(NULL);
+
+        while (!WIFEXITED(status) && !WIFSIGNALED(status)) {
+        waitpid(retVal, &status, WUNTRACED);
+        // wait(NULL);
+        }
          
     }
 
@@ -67,20 +76,35 @@ int main()
 {
     char** tokens;
     char* buffer;
-    //test
-    do
-    {
-        
+    char* unescaped;
+    char* instruction;
+
     printf("$ ");
     buffer = readInput();
-    buffer = unescape(buffer, NULL);
-    tokens = tokenize(buffer);
-    executeInstruction(tokens);    
+    unescaped = unescape(buffer, NULL);
+    tokens = tokenize(unescaped);
+    instruction = tokens[0];
+    executeInstruction(tokens);   
 
-    } while (strcmp(tokens[0],"exit") != 0);
+    while (strcmp(instruction, "exit") != 0)
+    {
+        free(buffer);
+        free(unescaped);
+        free(tokens);
 
-    free(tokens);
+        printf("$ ");
+
+        buffer = readInput();
+        unescaped = unescape(buffer, NULL);
+        tokens = tokenize(unescaped);
+        instruction = tokens[0];
+        executeInstruction(tokens); 
+    }
+    
+
     free(buffer);
+    free(unescaped);
+    free(tokens);    
 
     return 0;
 }
