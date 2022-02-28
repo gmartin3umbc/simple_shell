@@ -61,10 +61,8 @@ int executeInstruction(char** tokens){
         execvp(tokens[0], tokens);
     } else {
         // Parent process
-
-        while (!WIFEXITED(status) && !WIFSIGNALED(status)) {
+        while (!WIFSIGNALED(status) && !WIFEXITED(status)) {
         waitpid(retVal, &status, WUNTRACED);
-        // wait(NULL);
         }
          
     }
@@ -84,7 +82,27 @@ int main()
     unescaped = unescape(buffer, NULL);
     tokens = tokenize(unescaped);
     instruction = tokens[0];
-    executeInstruction(tokens);   
+
+    if(strcmp(instruction, "proc") != 0){
+            executeInstruction(tokens); 
+    }
+
+    else{
+        char prefix[] = "/proc/";
+        char* fileName = strcat(prefix,tokens[1]);
+        
+        FILE * file = fopen(fileName, "r");
+        
+        char contents;
+        while ((contents = fgetc(file)) != EOF)
+        {
+            printf("%c", contents);
+        }
+        
+        printf("\n");
+        fclose(file);
+
+    }   
 
     while (strcmp(instruction, "exit") != 0)
     {
@@ -98,7 +116,28 @@ int main()
         unescaped = unescape(buffer, NULL);
         tokens = tokenize(unescaped);
         instruction = tokens[0];
-        executeInstruction(tokens); 
+
+        if(strcmp(instruction, "proc") != 0){
+            executeInstruction(tokens); 
+        }
+
+        else{
+
+            char prefix[] = "/proc/";
+            char* fileName = strcat(prefix,tokens[1]);
+        
+            FILE * file = fopen(fileName, "r");
+        
+            char contents;
+            while ((contents = fgetc(file)) != EOF)
+            {
+                printf("%c", contents);
+            }
+        
+            printf("\n");
+            fclose(file);
+        } 
+
     }
     
 
