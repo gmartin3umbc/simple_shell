@@ -61,7 +61,14 @@ int executeInstruction(char **tokens)
     else if (retVal == 0)
     {
         // execute instruction
-        execvp(tokens[0], tokens);
+        if (execvp(tokens[0], tokens) == -1 &&
+            (strcmp(tokens[0], "exit") != 0) &&
+            (strcmp(tokens[0], "proc") != 0))
+        {
+            perror("Error: no such command");
+            exit(1);
+        }
+        exit(EXIT_FAILURE);
     }
     else
     {
@@ -70,6 +77,7 @@ int executeInstruction(char **tokens)
         {
             waitpid(retVal, &status, WUNTRACED);
         }
+        sleep(1);
     }
 
     return 0;
@@ -83,6 +91,12 @@ void executeProc(char *suffix)
 
     FILE *file = fopen(fileName, "r");
 
+    if (file == NULL)
+    {
+        perror("Error: ");
+        return;
+    }
+
     char contents;
 
     while ((contents = fgetc(file)) != EOF)
@@ -94,11 +108,10 @@ void executeProc(char *suffix)
     fclose(file);
 }
 
-
 int main(int argc, char **argv)
 {
 
-    if (argc > 1)
+    if (argc > 1 && argv != NULL)
     {
         fprintf(stderr, "Error: Programm does not accept any command line arguments\n");
         exit(1);
@@ -113,6 +126,7 @@ int main(int argc, char **argv)
             char *instruction;
 
             printf("$ ");
+
             buffer = readInput();
             unescaped = unescape(buffer, NULL);
             tokens = tokenize(unescaped);
@@ -148,19 +162,29 @@ int main(int argc, char **argv)
 
                 else
                 {
+
+                    // execute proc
                     char prefix[] = "/proc/";
                     char *fileName = strcat(prefix, tokens[1]);
 
                     FILE *file = fopen(fileName, "r");
 
-                    char contents;
-                    while ((contents = fgetc(file)) != EOF)
+                    if (file == NULL)
                     {
-                        printf("%c", contents);
+                        perror("Error: ");
                     }
 
-                    printf("\n");
-                    fclose(file);
+                    else
+                    {
+                        char contents;
+                        while ((contents = fgetc(file)) != EOF)
+                        {
+                            printf("%c", contents);
+                        }
+
+                        printf("\n");
+                        fclose(file);
+                    }
                 }
             }
 
